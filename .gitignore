@@ -121,3 +121,4 @@ backup/
 .github-local/
 
 .claude-tasks/
+*.ctx
