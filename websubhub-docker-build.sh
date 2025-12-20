@@ -211,6 +211,21 @@ if [ -z "$VERSION" ]; then
 fi
 
 echo -e "${GREEN}Release version: ${VERSION}${NC}"
+
+# Create .env files in all docker broker subdirectories
+DOCKER_DIR="${DEPLOYMENT_DIR}/docker"
+if [ -d "$DOCKER_DIR" ]; then
+  echo -e "${YELLOW}Creating .env files in docker subdirectories...${NC}"
+  for broker_dir in "$DOCKER_DIR"/*; do
+    if [ -d "$broker_dir" ]; then
+      env_file="${broker_dir}/.env"
+      echo "WEBSUBHUB_VERSION=${VERSION}" > "$env_file"
+      echo -e "${GREEN}✓ Created $(basename "$broker_dir")/.env${NC}"
+    fi
+  done
+else
+  echo -e "${YELLOW}Warning: ${DOCKER_DIR} not found${NC}"
+fi
 echo ""
 
 # Login to Docker Hub if push is enabled
