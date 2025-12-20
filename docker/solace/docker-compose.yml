@@ -1,7 +1,7 @@
 services:
   hub:
     image: 'wso2/wso2websubhub:latest'
-    container_name: wso2-websub-hub
+    container_name: websubhub
     hostname: hub
     ports:
       - '9000:9000'
@@ -22,7 +22,7 @@ services:
 
   consolidator:
     image: 'wso2/wso2websubhub-consolidator:latest'
-    container_name: wso2-websub-consolidator
+    container_name: websubhub-consolidator
     hostname: consolidator
     ports:
       - '10001:10001'
@@ -42,7 +42,7 @@ services:
 
   solace:
     image: 'solace/solace-pubsub-standard:latest'
-    container_name: solace-test-server
+    container_name: solace
     hostname: solace
     ports:
       - '55554:55555'
