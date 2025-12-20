@@ -119,3 +119,5 @@ backup/
 # CI/CD artifacts
 .gitlab-ci-local/
 .github-local/
+
+.claude-tasks/
