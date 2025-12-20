@@ -112,7 +112,7 @@ Once deployed, the following services are available:
 
 - **WebSubHub Hub**: `https://localhost:9000`
 - **Consolidator**: `http://localhost:10001`
-- **Solace Admin**: `http://localhost:8080` (username: `admin`, password: `admin`)
+- **Solace Admin**: `http://localhost:8085` (username: `admin`, password: `admin`)
 - **Solace Messaging**: `localhost:55554`
 
 ### Configuration
