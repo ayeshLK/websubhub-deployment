@@ -13,7 +13,6 @@ NC='\033[0m' # No Color
 PUSH_IMAGES=${PUSH_IMAGES:-false}
 DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME:-wso2}
 REGISTRY=${REGISTRY:-docker.io}
-CLONE_REPO=${CLONE_REPO:-false}
 CLONE_DIR=""
 BUILD_PROJECT=${BUILD_PROJECT:-true}
 SKIP_TESTS=${SKIP_TESTS:-false}
@@ -31,7 +30,6 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --clone-dir)
-      CLONE_REPO=true
       CLONE_DIR="$2"
       shift 2
       ;;
@@ -44,12 +42,14 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --help)
-      echo "Usage: $0 [OPTIONS]"
+      echo "Usage: $0 --clone-dir <dir> [OPTIONS]"
       echo ""
       echo "Clone, build, and create Docker images for WSO2 WebSubHub components"
       echo ""
+      echo "Required:"
+      echo "  --clone-dir <dir>   Clone repository to specified directory (REQUIRED)"
+      echo ""
       echo "Options:"
-      echo "  --clone-dir <dir>   Clone repository to specified directory"
       echo "  --skip-build        Skip Gradle build step (use existing build artifacts)"
       echo "  --skip-tests        Skip tests during Gradle build"
       echo "  --push              Push images to Docker Hub (default: false)"
@@ -57,8 +57,6 @@ while [[ $# -gt 0 ]]; do
       echo "  --help              Show this help message"
       echo ""
       echo "Environment Variables:"
-      echo "  CLONE_REPO          Set to 'true' to enable cloning"
-      echo "  CLONE_DIR           Directory to clone repository into"
       echo "  BUILD_PROJECT       Set to 'false' to skip Gradle build"
       echo "  SKIP_TESTS          Set to 'true' to skip tests during build"
       echo "  PUSH_IMAGES         Set to 'true' to push images"
@@ -69,8 +67,8 @@ while [[ $# -gt 0 ]]; do
       echo "  # Clone, build, and create images"
       echo "  $0 --clone-dir /tmp/websubhub"
       echo ""
-      echo "  # Build images from current directory (skip Gradle build)"
-      echo "  $0 --skip-build"
+      echo "  # Clone, build (skip tests), and create images"
+      echo "  $0 --clone-dir /tmp/websubhub --skip-tests"
       echo ""
       echo "  # Clone, build (skip tests), and push images"
       echo "  $0 --clone-dir /tmp/websubhub --skip-tests --push"
@@ -84,45 +82,47 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Validate required parameters
+if [ -z "$CLONE_DIR" ]; then
+  echo -e "${RED}Error: --clone-dir is required${NC}"
+  echo "Use --help for usage information"
+  exit 1
+fi
+
+# Save the original directory (deployment repo)
+DEPLOYMENT_DIR=$(pwd)
+
 echo -e "${GREEN}=== WSO2 WebSubHub Docker Image Build Script ===${NC}"
 echo ""
 
-# Step 1: Clone repository if requested
-if [ "$CLONE_REPO" = true ]; then
-  echo -e "${BLUE}=== Step 1: Cloning Repository ===${NC}"
+# Step 1: Clone repository
+echo -e "${BLUE}=== Step 1: Cloning Repository ===${NC}"
 
-  if [ -z "$CLONE_DIR" ]; then
-    echo -e "${RED}Error: Clone directory not specified${NC}"
-    echo "Use --clone-dir <directory> to specify where to clone the repository"
+if [ -d "$CLONE_DIR" ]; then
+  echo -e "${YELLOW}Directory $CLONE_DIR already exists${NC}"
+  read -p "Do you want to remove it and re-clone? (y/N): " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Removing existing directory..."
+    rm -rf "$CLONE_DIR"
+  else
+    echo "Using existing directory"
+  fi
+fi
+
+if [ ! -d "$CLONE_DIR" ]; then
+  echo -e "${YELLOW}Cloning repository from ${REPO_URL}${NC}"
+  git clone "$REPO_URL" "$CLONE_DIR"
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}Error: Failed to clone repository${NC}"
     exit 1
   fi
-
-  if [ -d "$CLONE_DIR" ]; then
-    echo -e "${YELLOW}Directory $CLONE_DIR already exists${NC}"
-    read -p "Do you want to remove it and re-clone? (y/N): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      echo "Removing existing directory..."
-      rm -rf "$CLONE_DIR"
-    else
-      echo "Using existing directory"
-    fi
-  fi
-
-  if [ ! -d "$CLONE_DIR" ]; then
-    echo -e "${YELLOW}Cloning repository from ${REPO_URL}${NC}"
-    git clone "$REPO_URL" "$CLONE_DIR"
-    if [ $? -ne 0 ]; then
-      echo -e "${RED}Error: Failed to clone repository${NC}"
-      exit 1
-    fi
-    echo -e "${GREEN}✓ Repository cloned successfully${NC}"
-  fi
-
-  echo "Changing to repository directory: $CLONE_DIR"
-  cd "$CLONE_DIR"
-  echo ""
+  echo -e "${GREEN}✓ Repository cloned successfully${NC}"
 fi
+
+echo "Changing to repository directory: $CLONE_DIR"
+cd "$CLONE_DIR"
+echo ""
 
 # Step 2: Check Java version
 echo -e "${BLUE}=== Step 2: Checking Java Version ===${NC}"
