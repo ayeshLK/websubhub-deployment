@@ -44,9 +44,6 @@ services:
     image: 'solace/solace-pubsub-standard:latest'
     container_name: solace
     hostname: solace
-    ports:
-      - '55554:55555'
-      - '8080:8080'
     environment:
       - username_admin_globalaccesslevel=admin
       - username_admin_password=admin
