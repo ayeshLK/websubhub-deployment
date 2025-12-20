@@ -1,0 +1,42 @@
+name: Validation
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  validate-scripts:
+    name: Validate Scripts and Configs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate build script syntax
+        run: |
+          echo "Checking websubhub-docker-build.sh syntax..."
+          bash -n websubhub-docker-build.sh
+          echo "✓ Script syntax is valid"
+
+      - name: Validate docker-compose files
+        run: |
+          echo "Validating docker-compose files..."
+          for compose_file in docker/*/docker-compose.yml; do
+            if [ -f "$compose_file" ]; then
+              echo "Checking $compose_file"
+              docker-compose -f "$compose_file" config > /dev/null
+              echo "✓ $compose_file is valid"
+            fi
+          done
+
+      - name: Check for required files
+        run: |
+          echo "Checking for required files..."
+          [ -f "websubhub-docker-build.sh" ] && echo "✓ websubhub-docker-build.sh exists" || exit 1
+          [ -f ".gitignore" ] && echo "✓ .gitignore exists" || exit 1
+          [ -f "README.md" ] && echo "✓ README.md exists" || exit 1
+          [ -d "docker" ] && echo "✓ docker directory exists" || exit 1

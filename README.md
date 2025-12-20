@@ -1,5 +1,7 @@
 # WebSubHub Deployment
 
+[![Validation](https://github.com/ayeshLK/websubhub-deployment/actions/workflows/validation.yml/badge.svg)](https://github.com/ayeshLK/websubhub-deployment/actions/workflows/validation.yml)
+
 This repository provides Docker-based deployment configurations for WSO2 WebSubHub with support for multiple message broker backends. It's designed to simulate WebSubHub deployments and facilitate running various test scenarios.
 
 ## Overview
