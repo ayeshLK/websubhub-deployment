@@ -1,0 +1,121 @@
+# Docker
+.docker/
+docker-compose.override.yml
+docker-compose.local.yml
+*.tar
+*.tar.gz
+
+# Docker build cache (from build-docker-images.sh)
+.buildx-cache-*/
+
+# Docker volumes and persistent data
+volumes/
+data/
+persistent-data/
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+.kube/
+
+# Kubernetes secrets and sensitive data
+*-secrets.yaml
+*-secret.yaml
+secrets/
+*.enc
+
+# Helm
+charts/*.tgz
+.helm/
+requirements.lock
+
+# Kustomize
+kustomization.yaml.tmp
+
+# Local environment overrides
+*.local.yaml
+*.local.yml
+.env
+.env.*
+!.env.example
+
+# SSL/TLS certificates and keys
+*.pem
+*.key
+*.cert
+*.crt
+*.csr
+*.p12
+*.pfx
+tls/
+certs/
+certificates/
+
+# Container registry credentials
+.dockerconfigjson
+config.json
+auth.json
+
+# Terraform (if used for infrastructure)
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+terraform.tfvars
+*.tfvars
+
+# Ansible (if used for configuration)
+*.retry
+.ansible/
+inventory/hosts.local
+
+# Build artifacts and distributions
+build/
+dist/
+distribution/
+*.jar
+*.war
+*.ear
+*.zip
+
+# Cloned repositories (if using --clone-dir)
+product-integrator-websubhub/
+cloned-repos/
+
+# Logs
+*.log
+logs/
+*.out
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Monitoring and observability configs (if containing sensitive data)
+grafana-data/
+prometheus-data/
+alertmanager-data/
+
+# Backup files
+backup/
+*.backup
+
+# CI/CD artifacts
+.gitlab-ci-local/
+.github-local/
