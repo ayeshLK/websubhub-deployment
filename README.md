@@ -74,6 +74,12 @@ export DOCKERHUB_TOKEN="your-token"
 
 After building the Docker images, deploy WebSubHub using Docker Compose with your preferred message broker.
 
+### Supported Message Brokers
+
+This repository provides deployment configurations for multiple message brokers:
+- **Solace PubSub+** - Enterprise-grade messaging platform
+- **Apache Kafka** - High-throughput distributed streaming platform
+
 ### Deploying with Solace
 
 Navigate to the Solace broker directory:
@@ -91,6 +97,36 @@ This will start:
 - **WebSubHub Consolidator** (event processor)
 - **WebSubHub Hub** (main service)
 
+**Accessing Solace Services:**
+- **WebSubHub Hub**: `https://localhost:9000`
+- **Consolidator**: `http://localhost:10001`
+- **Solace Admin**: `http://localhost:8085` (username: `admin`, password: `admin`)
+- **Solace Messaging**: `localhost:55554`
+
+### Deploying with Kafka
+
+Navigate to the Kafka broker directory:
+```bash
+cd docker/kafka
+```
+
+Start the services:
+```bash
+docker-compose up -d
+```
+
+This will start:
+- **Apache Kafka** (KRaft mode, no Zookeeper required)
+- **WebSubHub Consolidator** (event processor)
+- **WebSubHub Hub** (main service)
+
+**Accessing Kafka Services:**
+- **WebSubHub Hub**: `https://localhost:9000`
+- **Consolidator**: `http://localhost:10001`
+- **Kafka Broker**: `localhost:9092`
+
+### Common Operations
+
 Check the status:
 ```bash
 docker-compose ps
@@ -101,19 +137,21 @@ View logs:
 docker-compose logs -f
 ```
 
+View logs for a specific service:
+```bash
+docker-compose logs -f hub
+docker-compose logs -f consolidator
+```
+
 Stop the services:
 ```bash
 docker-compose down
 ```
 
-### Accessing Services
-
-Once deployed, the following services are available:
-
-- **WebSubHub Hub**: `https://localhost:9000`
-- **Consolidator**: `http://localhost:10001`
-- **Solace Admin**: `http://localhost:8085` (username: `admin`, password: `admin`)
-- **Solace Messaging**: `localhost:55554`
+Remove volumes (clean state):
+```bash
+docker-compose down -v
+```
 
 ### Configuration
 
@@ -173,16 +211,33 @@ Check your webhook.site URL to see the delivered content. You should see the pub
 
 ```
 websubhub-deployment/
+├── .github/
+│   └── workflows/
+│       └── validation.yml       # CI workflow for syntax validation
 ├── docker/
-│   └── solace/              # Solace broker deployment
+│   ├── kafka/                   # Kafka broker deployment
+│   │   ├── docker-compose.yml
+│   │   ├── Config.hub.toml
+│   │   ├── Config.consolidator.toml
+│   │   └── .env                 # Auto-generated version file
+│   └── solace/                  # Solace broker deployment
 │       ├── docker-compose.yml
 │       ├── Config.hub.toml
 │       ├── Config.consolidator.toml
-│       └── .env             # Auto-generated version file
-├── websubhub-docker-build.sh  # Build script
+│       └── .env                 # Auto-generated version file
+├── websubhub-docker-build.sh    # Build script
 ├── .gitignore
 └── README.md
 ```
+
+## Continuous Integration
+
+This repository includes a GitHub Actions workflow that automatically validates:
+- Build script syntax (`websubhub-docker-build.sh`)
+- Docker Compose configuration files
+- Required files and directory structure
+
+The validation runs on every push and pull request to ensure the repository remains in a working state. Check the status badge at the top of this README.
 
 ## Troubleshooting
 
@@ -203,8 +258,33 @@ docker-compose logs <service-name>
 
 Common issues:
 - Java version mismatch (ensure Java 21+ is used during build)
+- Ballerina version mismatch (ensure Ballerina SL 2201.13.1+ is used)
 - Missing configuration files
 - Insufficient Docker resources (increase memory/CPU allocation)
+
+### Kafka Connectivity Issues
+
+If WebSubHub can't connect to Kafka:
+1. Verify Kafka is healthy:
+   ```bash
+   docker-compose logs kafka
+   ```
+
+2. Check if Kafka advertised listeners are configured correctly in `docker-compose.yml`:
+   ```yaml
+   KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+   ```
+
+3. Verify the consolidator config uses the correct bootstrap server:
+   ```toml
+   [websubhub.consolidator.config.store.kafka]
+   bootstrapServers = "kafka:9092"
+   ```
+
+4. Test Kafka connectivity from consolidator:
+   ```bash
+   docker exec -it websubhub-consolidator nc -zv kafka 9092
+   ```
 
 ### Rebuilding Images
 
@@ -213,8 +293,8 @@ To rebuild after code changes:
 # Rebuild with the build script
 ./websubhub-docker-build.sh --clone-dir /tmp/websubhub
 
-# Restart services
-cd docker/solace
+# Restart services (use your broker directory)
+cd docker/kafka  # or docker/solace
 docker-compose down
 docker-compose up -d
 ```
@@ -225,3 +305,5 @@ docker-compose up -d
 - [WebSubHub GitHub Repository](https://github.com/wso2/product-integrator-websubhub)
 - [W3C WebSub Specification](https://www.w3.org/TR/websub/)
 - [Solace Documentation](https://docs.solace.com/)
+- [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
+- [Ballerina Documentation](https://ballerina.io/learn/)
