@@ -28,7 +28,7 @@ jobs:
           for compose_file in docker/*/docker-compose.yml; do
             if [ -f "$compose_file" ]; then
               echo "Checking $compose_file"
-              docker-compose -f "$compose_file" config > /dev/null
+              docker compose -f "$compose_file" config > /dev/null
               echo "✓ $compose_file is valid"
             fi
           done
