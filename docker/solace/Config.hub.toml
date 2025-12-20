@@ -1,0 +1,42 @@
+[websubhub.config.server]
+port = 9000
+id = "websubhub-1"
+
+[websubhub.config.server.secureSocket]
+key.path = "conf/resources/wso2websubhub.jks"
+key.password = "password"
+
+[websubhub.config.state.snapshot]
+url = "http://consolidator:10001"
+
+[websubhub.config.state.events]
+topic = "websub-events"
+consumerId = "websub-events-consumer"
+
+[websubhub.config.store.solace]
+url = "tcp://solace:55555"
+messageVpn = "default"
+auth.username = "admin"
+auth.password = "admin"
+
+[websubhub.config.store.solace.consumer]
+receiveTimeout = 10.0
+
+[websubhub.config.store.solace.admin]
+url = "http://solace:8080/SEMP/v2/config"
+timeout = 30.0
+auth.username = "admin"
+auth.password = "admin"
+
+[websubhub.config.delivery]
+timeout = 60.0
+
+[websubhub.config.delivery.retry]
+count = 3
+interval = 3.0
+backOffFactor = 2.0
+maxWaitInterval = 20.0
+statusCodes = [500, 502, 503]
+
+[ballerina.log]
+level = "DEBUG"

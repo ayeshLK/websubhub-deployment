@@ -1,0 +1,68 @@
+services:
+  hub:
+    image: 'wso2/wso2websubhub:latest'
+    container_name: wso2-websub-hub
+    hostname: hub
+    ports:
+      - '9000:9000'
+    depends_on:
+      consolidator:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/9000' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 10
+    volumes:
+      - ./Config.hub.toml:/home/wso2/wso2websubhub-1.0.0-M1-RC1-SNAPSHOT/conf/Config.toml
+    networks:
+      - websub-network
+
+  consolidator:
+    image: 'wso2/wso2websubhub-consolidator:latest'
+    container_name: wso2-websub-consolidator
+    hostname: consolidator
+    ports:
+      - '10001:10001'
+    depends_on:
+      solace:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/10001' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 10
+    volumes:
+      - ./Config.consolidator.toml:/home/wso2/wso2websubhub-consolidator-1.0.0-M1-RC1-SNAPSHOT/conf/Config.toml
+    networks:
+      - websub-network
+
+  solace:
+    image: 'solace/solace-pubsub-standard:latest'
+    container_name: solace-test-server
+    hostname: solace
+    ports:
+      - '55554:55555'
+      - '8080:8080'
+    environment:
+      - username_admin_globalaccesslevel=admin
+      - username_admin_password=admin
+    shm_size: 1g
+    ulimits:
+      nofile:
+        soft: 2448
+        hard: 1048576
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/55555' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 20
+    networks:
+      - websub-network
+
+networks:
+  websub-network:

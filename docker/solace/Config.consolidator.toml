@@ -1,0 +1,28 @@
+[websubhub.consolidator.config.server]
+port = 10001
+
+[websubhub.consolidator.config.state.snapshot]
+topic = "websub-events-snapshot"
+consumerId = "websub-events-snapshot-consumer"
+
+[websubhub.consolidator.config.state.events]
+topic = "websub-events"
+consumerId = "consolidator-websub-events-consumer"
+
+[websubhub.consolidator.config.store.solace]
+url = "tcp://solace:55555"
+messageVpn = "default"
+auth.username = "admin"
+auth.password = "admin"
+
+[websubhub.consolidator.config.store.solace.consumer]
+receiveTimeout = 10.0
+
+[websubhub.consolidator.config.store.solace.admin]
+url = "http://solace:8080/SEMP/v2/config"
+timeout = 30.0
+auth.username = "admin"
+auth.password = "admin"
+
+[ballerina.log]
+level = "DEBUG"
