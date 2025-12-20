@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deployment
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.deployment.config.server.port }}
+          env:
+            - name: BAL_CONFIG_FILES
+              value: "/home/ballerina/conf/Config.toml"
+          volumeMounts:
+            - name: websubhub-consolidator-conf
+              mountPath: /home/ballerina/conf
+              readOnly: true
+      volumes:
+        - name: websubhub-consolidator-conf
+          configMap:
+            name: websubhub-consolidator-svc-cm

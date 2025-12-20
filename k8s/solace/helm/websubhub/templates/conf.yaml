@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: websubhub-svc-cm
+  namespace: {{ .Release.Namespace }}
+data:
+  Config.toml: |-
+{{ tpl (.Files.Get "confs/Config.toml") . | indent 4 }}

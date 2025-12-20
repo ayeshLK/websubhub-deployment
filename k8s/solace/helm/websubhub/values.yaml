@@ -1,0 +1,58 @@
+deployment:
+  replicas: 1
+  image:
+    repository: wso2/wso2websubhub
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  config:
+    server:
+      port: 9000
+      id: "websubhub-node"
+      secureSocket:
+        enable: true
+        keystore:
+          path: "conf/resources/wso2websubhub.jks"
+          password: "wso2carbon"
+
+    state:
+      snapshot:
+        url: "http://websubhub-consolidator-service:10001/snapshot"
+      events:
+        topic: "websub-events"
+        consumerId: "hub-websub-events-consumer"
+
+    store:
+      solace:
+        url: "tcp://solace:55555"
+        vpnName: "default"
+        username: "admin"
+        password: "admin"
+        consumerReceiveTimeOut: 10
+        admin:
+          url: "http://solace:8080/SEMP/v2/config"
+          username: "admin"
+          password: "admin"
+          timeOut: 30
+
+    delivery:
+      timeout: 60
+      retry:
+        count: 3
+        interval: 2.0
+        backOffFactor: 2.0
+        maxWaitInterval: 20.0
+        statusCodes: [500, 502, 503]
+
+logging:
+  level: "INFO"
+
+service:
+  type: ClusterIP
+  port: 9000
+
+ingress:
+  enabled: false
+  hostname: wso2-websubhub.local
+  path: /hub
+  pathType: Prefix

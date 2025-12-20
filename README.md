@@ -2,22 +2,29 @@
 
 [![Validation](https://github.com/ayeshLK/websubhub-deployment/actions/workflows/validation.yml/badge.svg)](https://github.com/ayeshLK/websubhub-deployment/actions/workflows/validation.yml)
 
-This repository provides Docker-based deployment configurations for WSO2 WebSubHub with support for multiple message broker backends. It's designed to simulate WebSubHub deployments and facilitate running various test scenarios.
+This repository provides Docker and Kubernetes-based deployment configurations for WSO2 WebSubHub with support for multiple message broker backends. It's designed to simulate WebSubHub deployments and facilitate running various test scenarios.
 
 ## Overview
 
 WebSubHub is a publish-subscribe hub implementation based on the W3C WebSub specification. This repository helps you:
 - Build Docker images for WebSubHub components
-- Deploy WebSubHub with different message broker backends (e.g., Solace)
+- Deploy WebSubHub with different message broker backends (Solace, Kafka)
+- Deploy WebSubHub on Kubernetes using Helm charts
 - Run integration tests and validate WebSub functionality
 
 ## Prerequisites
 
+### For Docker Deployment
 - **Docker** and **Docker Compose** installed
 - **Docker Buildx** for multi-architecture builds
 - **Java 21+** for building the project
 - **Ballerina SL 2201.13.1+** for building the project
 - **Git** for cloning repositories
+
+### For Kubernetes Deployment (Optional)
+- **Kubernetes cluster** (v1.19+)
+- **Helm 3.x** for chart deployment
+- **kubectl** configured to access your cluster
 
 ## Building Docker Images
 
@@ -161,6 +168,51 @@ Configuration files for each component are located in the broker directory:
 
 The WebSubHub version is automatically set in `.env` files by the build script.
 
+## Deploying on Kubernetes
+
+WebSubHub can also be deployed on Kubernetes using Helm charts. This provides better scalability, high availability, and production-grade orchestration.
+
+### Prerequisites for Kubernetes
+
+- Kubernetes cluster (v1.19+)
+- Helm 3.x installed
+- kubectl configured to access your cluster
+- Docker images built (using the build script above)
+
+### Kubernetes Deployment with Solace
+
+Navigate to the Kubernetes Solace directory:
+```bash
+cd k8s/solace
+```
+
+For detailed deployment instructions, configuration options, and troubleshooting, see the [Kubernetes Solace README](k8s/solace/README.md).
+
+**Quick Start:**
+
+1. Deploy Solace broker:
+   ```bash
+   kubectl create namespace websubhub
+   kubectl apply -f manifests/solace-deployment.yaml -n websubhub
+   ```
+
+2. Deploy WebSubHub Consolidator:
+   ```bash
+   helm install websubhub-consolidator ./helm/websubhub-consolidator --namespace websubhub
+   ```
+
+3. Deploy WebSubHub Hub:
+   ```bash
+   helm install websubhub ./helm/websubhub --namespace websubhub
+   ```
+
+4. Access services via port-forwarding:
+   ```bash
+   kubectl port-forward svc/websubhub-service 9000:9000 -n websubhub
+   ```
+
+For complete documentation including scaling, monitoring, and advanced configuration, refer to the [k8s/solace/README.md](k8s/solace/README.md).
+
 ## Testing WebSubHub
 
 ### Step 1: Register a Topic
@@ -225,6 +277,14 @@ websubhub-deployment/
 │       ├── Config.hub.toml
 │       ├── Config.consolidator.toml
 │       └── .env                 # Auto-generated version file
+├── k8s/
+│   └── solace/                  # Kubernetes deployment with Solace
+│       ├── helm/
+│       │   ├── websubhub/       # Helm chart for WebSubHub Hub
+│       │   └── websubhub-consolidator/  # Helm chart for Consolidator
+│       ├── manifests/
+│       │   └── solace-deployment.yaml   # Solace broker manifests
+│       └── README.md            # Kubernetes deployment guide
 ├── websubhub-docker-build.sh    # Build script
 ├── .gitignore
 └── README.md
