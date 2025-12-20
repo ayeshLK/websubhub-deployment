@@ -16,6 +16,7 @@ WebSubHub is a publish-subscribe hub implementation based on the W3C WebSub spec
 - **Docker** and **Docker Compose** installed
 - **Docker Buildx** for multi-architecture builds
 - **Java 21+** for building the project
+- **Ballerina SL 2201.13.1+** for building the project
 - **Git** for cloning repositories
 
 ## Building Docker Images
