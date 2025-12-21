@@ -28,20 +28,20 @@ deployment:
         vpnName: "default"
         username: "admin"
         password: "password"
-        consumerReceiveTimeOut: 10.0
+        consumerReceiveTimeOut: "10.0"
         admin:
           url: "http://solace-pubsubplus-dev:8080/SEMP/v2/config"
           username: "admin"
           password: "password"
-          timeOut: 30.0
+          timeOut: "30.0"
 
     delivery:
-      timeout: 60.0
+      timeout: "60.0"
       retry:
         count: 3
-        interval: 2.0
-        backOffFactor: 2.0
-        maxWaitInterval: 20.0
+        interval: "2.0"
+        backOffFactor: "2.0"
+        maxWaitInterval: "20.0"
         statusCodes: [500, 502, 503]
 
 logging:
