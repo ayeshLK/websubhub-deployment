@@ -24,19 +24,19 @@ deployment:
 
     store:
       solace:
-        url: "tcp://solace:55555"
+        url: "tcp://solace:55554"
         vpnName: "default"
         username: "admin"
         password: "admin"
-        consumerReceiveTimeOut: 10
+        consumerReceiveTimeOut: 10.0
         admin:
-          url: "http://solace:8080/SEMP/v2/config"
+          url: "http://solace/SEMP/v2/config"
           username: "admin"
           password: "admin"
-          timeOut: 30
+          timeOut: 30.0
 
     delivery:
-      timeout: 60
+      timeout: 60.0
       retry:
         count: 3
         interval: 2.0

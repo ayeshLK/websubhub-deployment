@@ -22,7 +22,7 @@ WebSubHub is a publish-subscribe hub implementation based on the W3C WebSub spec
 - **Git** for cloning repositories
 
 ### For Kubernetes Deployment (Optional)
-- **Kubernetes cluster** (v1.19+)
+- **Kubernetes cluster** (v1.19+) or **Minikube** for local development
 - **Helm 3.x** for chart deployment
 - **kubectl** configured to access your cluster
 
@@ -188,7 +188,7 @@ cd k8s/solace
 
 For detailed deployment instructions, configuration options, and troubleshooting, see the [Kubernetes Solace README](k8s/solace/README.md).
 
-**Quick Start:**
+**Quick Start (for Cloud/Production):**
 
 1. Deploy Solace broker:
    ```bash
@@ -211,7 +211,32 @@ For detailed deployment instructions, configuration options, and troubleshooting
    kubectl port-forward svc/websubhub-service 9000:9000 -n websubhub
    ```
 
-For complete documentation including scaling, monitoring, and advanced configuration, refer to the [k8s/solace/README.md](k8s/solace/README.md).
+**Quick Start (for Minikube/Local Development):**
+
+When using Minikube, build images directly in Minikube's Docker daemon:
+
+```bash
+# Point Docker to Minikube's daemon
+eval $(minikube docker-env)
+
+# Build images
+./websubhub-docker-build.sh --clone-dir /tmp/websubhub --skip-tests
+
+# Deploy (note: using IfNotPresent for local images)
+kubectl create namespace websubhub
+kubectl apply -f k8s/solace/manifests/solace-deployment.yaml -n websubhub
+helm install websubhub-consolidator ./k8s/solace/helm/websubhub-consolidator \
+  --namespace websubhub \
+  --set deployment.image.pullPolicy=IfNotPresent
+helm install websubhub ./k8s/solace/helm/websubhub \
+  --namespace websubhub \
+  --set deployment.image.pullPolicy=IfNotPresent
+
+# Access services
+kubectl port-forward svc/websubhub-service 9000:9000 -n websubhub
+```
+
+For complete documentation including Minikube setup, scaling, monitoring, and advanced configuration, refer to the [k8s/solace/README.md](k8s/solace/README.md).
 
 ## Testing WebSubHub
 

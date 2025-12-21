@@ -20,23 +20,32 @@ auth.username = "{{ .Values.deployment.config.store.solace.username }}"
 auth.password = "{{ .Values.deployment.config.store.solace.password }}"
 
 [websubhub.config.store.solace.consumer]
-receiveTimeout = {{ .Values.deployment.config.store.solace.consumerReceiveTimeOut | float64 }}
+# receiveTimeout = {{ .Values.deployment.config.store.solace.consumerReceiveTimeOut }}
+receiveTimeout = 10.0
 
 [websubhub.config.store.solace.admin]
 url = "{{ .Values.deployment.config.store.solace.admin.url }}"
-timeout = {{ .Values.deployment.config.store.solace.admin.timeOut | float64 }}
+# timeout = {{ .Values.deployment.config.store.solace.admin.timeOut }}
+timeout = 30.0
 auth.username = "{{ .Values.deployment.config.store.solace.admin.username }}"
 auth.password = "{{ .Values.deployment.config.store.solace.admin.password }}"
 
 [websubhub.config.delivery]
-timeout = {{ .Values.deployment.config.delivery.timeout | float64 }}
+# timeout = {{ .Values.deployment.config.delivery.timeout }}
+timeout = 60.0
 
 [websubhub.config.delivery.retry]
 count = {{ .Values.deployment.config.delivery.retry.count }}
-interval = {{ .Values.deployment.config.delivery.retry.interval | float64 }}
-backOffFactor = {{ .Values.deployment.config.delivery.retry.backOffFactor | float64 }}
-maxWaitInterval = {{ .Values.deployment.config.delivery.retry.maxWaitInterval | float64 }}
+# interval = {{ .Values.deployment.config.delivery.retry.interval }}
+interval = 2.0
+# backOffFactor = {{ .Values.deployment.config.delivery.retry.backOffFactor }}
+backOffFactor = 2.0
+# maxWaitInterval = {{ .Values.deployment.config.delivery.retry.maxWaitInterval }}
+maxWaitInterval = 20.0
 statusCodes = {{ .Values.deployment.config.delivery.retry.statusCodes | toJson }}
 
 [ballerina.log]
 level = "{{ .Values.logging.level }}"
+
+[ballerina.http.traceLogAdvancedConfig]
+console = true

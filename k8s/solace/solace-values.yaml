@@ -1,0 +1,35 @@
+# Solace PubSub+ Helm Chart Values
+# For use with pubsubplus-dev chart
+# This provides minimal customization for development deployment
+
+# Admin credentials
+solace:
+  usernameAdminPassword: admin
+
+# Image configuration (uses public Docker Hub by default)
+image:
+  repository: solace/solace-pubsub-standard
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    servicePort: 55555      # SMF port
+    serviceWebPort: 8080    # Admin web UI
+
+# Storage configuration (minimal for dev)
+storage:
+  persistent: true
+  size: 5Gi
+
+# Resource limits (minimal dev setup)
+# The pubsubplus-dev chart sets these automatically, but can be overridden
+# resources:
+#   requests:
+#     cpu: 1
+#     memory: 2Gi
+#   limits:
+#     cpu: 2
+#     memory: 4Gi
