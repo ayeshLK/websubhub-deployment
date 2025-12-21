@@ -83,18 +83,12 @@ helm repo update
 
 # Deploy Solace broker using official Helm chart
 cd k8s/solace
-helm install solace solacecharts/pubsubplus-dev \
-  --namespace websubhub \
-  -f solace-values.yaml
+helm install solace solacecharts/pubsubplus-dev -n websubhub --set solace.usernameAdminPassword="password"
 
 # Deploy WebSubHub components with local images (using IfNotPresent)
-helm install websubhub-consolidator ./helm/websubhub-consolidator \
-  --namespace websubhub \
-  --set deployment.image.pullPolicy=IfNotPresent
+helm install websubhub-consolidator ./helm/websubhub-consolidator -n websubhub
 
-helm install websubhub ./helm/websubhub \
-  --namespace websubhub \
-  --set deployment.image.pullPolicy=IfNotPresent
+helm install websubhub ./helm/websubhub -n websubhub
 ```
 
 ## Directory Structure
