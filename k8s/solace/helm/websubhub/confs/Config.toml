@@ -2,9 +2,9 @@
 port = {{ .Values.deployment.config.server.port }}
 id = "{{ .Values.deployment.config.server.id }}"
 
-[websubhub.config.server.secureSocket]
-key.path = "{{ .Values.deployment.config.server.secureSocket.keystore.path }}"
-key.password = "{{ .Values.deployment.config.server.secureSocket.keystore.password }}"
+# [websubhub.config.server.secureSocket]
+# key.path = "{{ .Values.deployment.config.server.secureSocket.keystore.path }}"
+# key.password = "{{ .Values.deployment.config.server.secureSocket.keystore.password }}"
 
 [websubhub.config.state.snapshot]
 url = "{{ .Values.deployment.config.state.snapshot.url }}"

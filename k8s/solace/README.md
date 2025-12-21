@@ -91,6 +91,12 @@ helm install websubhub-consolidator ./helm/websubhub-consolidator -n websubhub
 helm install websubhub ./helm/websubhub -n websubhub
 ```
 
+test curl
+
+```
+kubectl run curl-test --image=curlimages/curl:latest --restart=Never -n websubhub --rm -it \
+  --command -- curl -vX GET "https://websubhub-service:9000/hub/health" -k
+
 ## Directory Structure
 
 ```

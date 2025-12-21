@@ -17,14 +17,14 @@ deployment:
 
     state:
       snapshot:
-        url: "http://websubhub-consolidator-service:10001/snapshot"
+        url: "http://websubhub-consolidator-service:10001"
       events:
         topic: "websub-events"
         consumerId: "hub-websub-events-consumer"
 
     store:
       solace:
-        url: "tcp://solace-pubsubplus-dev:55554"
+        url: "tcp://solace-pubsubplus-dev:55555"
         vpnName: "default"
         username: "admin"
         password: "password"
