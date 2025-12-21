@@ -16,11 +16,11 @@ auth.username = "{{ .Values.deployment.config.store.solace.username }}"
 auth.password = "{{ .Values.deployment.config.store.solace.password }}"
 
 [websubhub.consolidator.config.store.solace.consumer]
-receiveTimeout = {{ .Values.deployment.config.store.solace.consumerReceiveTimeOut | float64 }}
+receiveTimeout = {{ .Values.deployment.config.store.solace.consumerReceiveTimeOut }}
 
 [websubhub.consolidator.config.store.solace.admin]
 url = "{{ .Values.deployment.config.store.solace.admin.url }}"
-timeout = {{ .Values.deployment.config.store.solace.admin.timeOut | float64 }}
+timeout = {{ .Values.deployment.config.store.solace.admin.timeOut }}
 auth.username = "{{ .Values.deployment.config.store.solace.admin.username }}"
 auth.password = "{{ .Values.deployment.config.store.solace.admin.password }}"
 
