@@ -11,7 +11,7 @@ url = "{{ .Values.deployment.config.state.snapshot.url }}"
 
 [websubhub.config.state.events]
 topic = "{{ .Values.deployment.config.state.events.topic }}"
-consumerId = "{{ .Values.deployment.config.state.events.consumerId }}"
+consumerIdPrefix = "{{ .Values.deployment.config.state.events.consumerId }}"
 
 [websubhub.config.store.solace]
 url = "{{ .Values.deployment.config.store.solace.url }}"
