@@ -1,7 +1,6 @@
 services:
   hub:
     image: 'wso2/wso2websubhub:1.0.0-M1-RC4'
-    platform: linux/arm64
     container_name: websubhub
     hostname: hub
     ports:
@@ -23,7 +22,6 @@ services:
 
   consolidator:
     image: 'wso2/wso2websubhub-consolidator:1.0.0-M1-RC4'
-    platform: linux/arm64
     container_name: websubhub-consolidator
     hostname: consolidator
     ports:
@@ -44,7 +42,6 @@ services:
 
   solace:
     image: 'solace/solace-pubsub-standard:latest'
-    platform: linux/arm64
     container_name: solace
     hostname: solace
     ports:
