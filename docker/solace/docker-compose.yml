@@ -1,6 +1,6 @@
 services:
   hub:
-    image: 'wso2/wso2websubhub:latest'
+    image: 'wso2/wso2websubhub:1.0.0-M1-RC4'
     container_name: websubhub
     hostname: hub
     ports:
@@ -21,7 +21,7 @@ services:
       - websub-network
 
   consolidator:
-    image: 'wso2/wso2websubhub-consolidator:latest'
+    image: 'wso2/wso2websubhub-consolidator:1.0.0-M1-RC4'
     container_name: websubhub-consolidator
     hostname: consolidator
     ports:

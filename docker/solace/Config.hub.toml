@@ -11,7 +11,7 @@ url = "http://consolidator:10001"
 
 [websubhub.config.state.events]
 topic = "websub-events"
-consumerId = "websub-events-consumer"
+consumerIdPrefix = "websub-events-consumer"
 
 [websubhub.config.store.solace]
 url = "tcp://solace:55555"
