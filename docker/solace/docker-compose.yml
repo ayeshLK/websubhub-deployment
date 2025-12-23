@@ -1,6 +1,7 @@
 services:
   hub:
     image: 'wso2/wso2websubhub:1.0.0-M1-RC4'
+    platform: linux/arm64
     container_name: websubhub
     hostname: hub
     ports:
@@ -16,12 +17,13 @@ services:
       start_period: 30s
       retries: 10
     volumes:
-      - ./Config.hub.toml:/home/wso2/wso2websubhub-${WEBSUBHUB_VERSION:-1.0.0}/conf/Config.toml
+      - ./Config.hub.toml:/home/wso2/wso2websubhub-${WEBSUBHUB_VERSION:-1.0.0-M1-RC4}/conf/Config.toml
     networks:
       - websub-network
 
   consolidator:
     image: 'wso2/wso2websubhub-consolidator:1.0.0-M1-RC4'
+    platform: linux/arm64
     container_name: websubhub-consolidator
     hostname: consolidator
     ports:
@@ -36,12 +38,13 @@ services:
       start_period: 30s
       retries: 10
     volumes:
-      - ./Config.consolidator.toml:/home/wso2/wso2websubhub-consolidator-${WEBSUBHUB_VERSION:-1.0.0}/conf/Config.toml
+      - ./Config.consolidator.toml:/home/wso2/wso2websubhub-consolidator-${WEBSUBHUB_VERSION:-1.0.0-M1-RC4}/conf/Config.toml
     networks:
       - websub-network
 
   solace:
     image: 'solace/solace-pubsub-standard:latest'
+    platform: linux/arm64
     container_name: solace
     hostname: solace
     ports:
