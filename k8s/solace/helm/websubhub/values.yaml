@@ -14,14 +14,12 @@ deployment:
         keystore:
           path: "conf/resources/wso2websubhub.jks"
           password: "wso2carbon"
-
     state:
       snapshot:
-        url: "http://websubhub-consolidator-service:10001"
+        url: "http://websubhub-consolidator-service:10001/consolidator/state-snapshot"
       events:
         topic: "websub-events"
         consumerId: "hub-websub-events-consumer"
-
     store:
       solace:
         url: "tcp://solace-pubsubplus-dev:55555"
@@ -34,7 +32,6 @@ deployment:
           username: "admin"
           password: "password"
           timeOut: "30.0"
-
     delivery:
       timeout: "60.0"
       retry:

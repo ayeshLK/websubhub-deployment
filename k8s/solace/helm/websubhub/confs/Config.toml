@@ -20,8 +20,7 @@ auth.username = "{{ .Values.deployment.config.store.solace.username }}"
 auth.password = "{{ .Values.deployment.config.store.solace.password }}"
 
 [websubhub.config.store.solace.consumer]
-# receiveTimeout = {{ .Values.deployment.config.store.solace.consumerReceiveTimeOut }}
-receiveTimeout = 10.0
+receiveTimeout = {{ .Values.deployment.config.store.solace.consumerReceiveTimeOut }}
 
 [websubhub.config.store.solace.admin]
 url = "{{ .Values.deployment.config.store.solace.admin.url }}"
