@@ -1,9 +1,9 @@
 deployment:
   replicas: 1
   image:
-    repository: wso2/wso2websubhub
-    tag: latest
+    repository: "wso2/wso2websubhub"
     pullPolicy: IfNotPresent
+    tag: "1.0.0-M1-RC4"
 
   config:
     server:
