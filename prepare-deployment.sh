@@ -10,9 +10,6 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PUSH_IMAGES=${PUSH_IMAGES:-false}
-DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME:-wso2}
-REGISTRY=${REGISTRY:-docker.io}
 CLONE_DIR=""
 DEPLOYMENT_VERSION=""
 BUILD_PROJECT=${BUILD_PROJECT:-true}
@@ -22,14 +19,6 @@ REPO_URL="https://github.com/wso2/product-integrator-websubhub"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --push)
-      PUSH_IMAGES=true
-      shift
-      ;;
-    --username)
-      DOCKERHUB_USERNAME="$2"
-      shift 2
-      ;;
     --clone-dir)
       CLONE_DIR="$2"
       shift 2
@@ -54,22 +43,17 @@ while [[ $# -gt 0 ]]; do
       echo "Required (mutually exclusive):"
       echo "  --clone-dir <dir>              Clone repository to specified directory and build from source"
       echo "  --deployment-version <version> Use a released version (updates .env files with version)"
-      echo "                                 Note: Cannot be used with --push, --skip-build, or --skip-tests"
+      echo "                                 Note: Cannot be used with --skip-build or --skip-tests"
       echo "                                 Version format: plain format (e.g., 1.0.0) without 'v' prefix"
       echo ""
       echo "Options (only applicable with --clone-dir):"
       echo "  --skip-build                   Skip Gradle build step (use existing build artifacts)"
       echo "  --skip-tests                   Skip tests during Gradle build"
-      echo "  --push                         Push images to Docker Hub (default: false)"
-      echo "  --username <user>              Docker Hub username (default: wso2)"
       echo "  --help                         Show this help message"
       echo ""
       echo "Environment Variables:"
       echo "  BUILD_PROJECT       Set to 'false' to skip Gradle build"
       echo "  SKIP_TESTS          Set to 'true' to skip tests during build"
-      echo "  PUSH_IMAGES         Set to 'true' to push images"
-      echo "  DOCKERHUB_USERNAME  Docker Hub username"
-      echo "  DOCKERHUB_TOKEN     Docker Hub token/password (required if --push is used)"
       echo ""
       echo "Examples:"
       echo "  # Clone, build, and create images from source"
@@ -106,9 +90,9 @@ fi
 # Additional validations for --deployment-version
 if [ -n "$DEPLOYMENT_VERSION" ]; then
   # Check if --deployment-version is used with incompatible flags
-  if [ "$PUSH_IMAGES" = true ] || [ "$BUILD_PROJECT" = false ] || [ "$SKIP_TESTS" = true ]; then
-    echo -e "${RED}Error: --deployment-version cannot be used with --push, --skip-build, or --skip-tests${NC}"
-    echo "The --deployment-version flag only updates .env files and does not build or push images"
+  if [ "$BUILD_PROJECT" = false ] || [ "$SKIP_TESTS" = true ]; then
+    echo -e "${RED}Error: --deployment-version cannot be used with --skip-build or --skip-tests${NC}"
+    echo "The --deployment-version flag only updates .env files and does not build images"
     echo "Use --help for usage information"
     exit 1
   fi
@@ -287,24 +271,6 @@ else
 fi
 echo ""
 
-# Login to Docker Hub if push is enabled
-if [ "$PUSH_IMAGES" = true ]; then
-  echo -e "${YELLOW}Push mode enabled - logging in to Docker Hub${NC}"
-  if [ -z "$DOCKERHUB_TOKEN" ]; then
-    echo -e "${RED}Error: DOCKERHUB_TOKEN environment variable not set${NC}"
-    echo "Please set DOCKERHUB_TOKEN before using --push"
-    exit 1
-  fi
-
-  echo "$DOCKERHUB_TOKEN" | docker login "$REGISTRY" -u "$DOCKERHUB_USERNAME" --password-stdin
-  if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Docker login failed${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}Successfully logged in to Docker Hub${NC}"
-  echo ""
-fi
-
 # Set up Docker Buildx
 echo -e "${YELLOW}Setting up Docker Buildx${NC}"
 docker buildx version > /dev/null 2>&1
@@ -346,11 +312,6 @@ echo -e "${GREEN}Component count: $(echo ${COMPONENTS} | wc -w)${NC}"
 echo ""
 
 # Build Docker images for each component
-BUILD_ARGS="--push"
-if [ "$PUSH_IMAGES" != true ]; then
-  BUILD_ARGS="--load"
-fi
-
 SUCCESS_COUNT=0
 SKIP_COUNT=0
 FAIL_COUNT=0
@@ -367,7 +328,7 @@ for component in $COMPONENTS; do
     continue
   fi
 
-  IMAGE_TAG="${DOCKERHUB_USERNAME}/wso2${component}:latest"
+  IMAGE_TAG="wso2/wso2${component}:latest"
   echo -e "${GREEN}Building Docker image: ${IMAGE_TAG}${NC}"
   echo "  Dockerfile: ${DOCKERFILE_PATH}"
   echo "  Build args: SERVER_NAME=wso2${component}, SERVER_VERSION=${VERSION}"
@@ -378,7 +339,7 @@ for component in $COMPONENTS; do
   set +e  # Disable exit on error for this build
   docker buildx build \
     --file "$DOCKERFILE_PATH" \
-    $BUILD_ARGS \
+    --load \
     --tag "$IMAGE_TAG" \
     --build-arg "SERVER_NAME=wso2${component}" \
     --build-arg "SERVER_VERSION=${VERSION}" \
@@ -416,9 +377,4 @@ if [ $FAIL_COUNT -gt 0 ]; then
   exit 1
 fi
 
-if [ "$PUSH_IMAGES" = true ]; then
-  echo -e "${GREEN}All images built and pushed successfully!${NC}"
-else
-  echo -e "${GREEN}All images built successfully!${NC}"
-  echo -e "${YELLOW}Note: Images were not pushed. Use --push to push to Docker Hub.${NC}"
-fi
+echo -e "${GREEN}All images built successfully!${NC}"
