@@ -18,8 +18,8 @@ jobs:
 
       - name: Validate build script syntax
         run: |
-          echo "Checking websubhub-docker-build.sh syntax..."
-          bash -n websubhub-docker-build.sh
+          echo "Checking prepare-deployment.sh syntax..."
+          bash -n prepare-deployment.sh
           echo "✓ Script syntax is valid"
 
       - name: Validate docker-compose files
@@ -36,7 +36,7 @@ jobs:
       - name: Check for required files
         run: |
           echo "Checking for required files..."
-          [ -f "websubhub-docker-build.sh" ] && echo "✓ websubhub-docker-build.sh exists" || exit 1
+          [ -f "prepare-deployment.sh" ] && echo "✓ prepare-deployment.sh exists" || exit 1
           [ -f ".gitignore" ] && echo "✓ .gitignore exists" || exit 1
           [ -f "README.md" ] && echo "✓ README.md exists" || exit 1
           [ -d "docker" ] && echo "✓ docker directory exists" || exit 1
