@@ -328,7 +328,7 @@ for component in $COMPONENTS; do
     continue
   fi
 
-  IMAGE_TAG="wso2/wso2${component}:latest"
+  IMAGE_TAG="wso2/wso2${component}:${VERSION}"
   echo -e "${GREEN}Building Docker image: ${IMAGE_TAG}${NC}"
   echo "  Dockerfile: ${DOCKERFILE_PATH}"
   echo "  Build args: SERVER_NAME=wso2${component}, SERVER_VERSION=${VERSION}"
