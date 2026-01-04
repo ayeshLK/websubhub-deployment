@@ -54,8 +54,10 @@ while [[ $# -gt 0 ]]; do
       echo "Required (mutually exclusive):"
       echo "  --clone-dir <dir>              Clone repository to specified directory and build from source"
       echo "  --deployment-version <version> Use a released version (updates .env files with version)"
+      echo "                                 Note: Cannot be used with --push, --skip-build, or --skip-tests"
+      echo "                                 Version format: plain format (e.g., 1.0.0) without 'v' prefix"
       echo ""
-      echo "Options:"
+      echo "Options (only applicable with --clone-dir):"
       echo "  --skip-build                   Skip Gradle build step (use existing build artifacts)"
       echo "  --skip-tests                   Skip tests during Gradle build"
       echo "  --push                         Push images to Docker Hub (default: false)"
@@ -76,11 +78,8 @@ while [[ $# -gt 0 ]]; do
       echo "  # Clone, build (skip tests), and create images"
       echo "  $0 --clone-dir /tmp/websubhub --skip-tests"
       echo ""
-      echo "  # Use a released version (e.g., v1.0.0)"
-      echo "  $0 --deployment-version v1.0.0"
-      echo ""
-      echo "  # Use a released version and push images"
-      echo "  $0 --deployment-version v1.0.0 --push"
+      echo "  # Use a released version (e.g., 1.0.0)"
+      echo "  $0 --deployment-version 1.0.0"
       exit 0
       ;;
     *)
@@ -102,6 +101,25 @@ if [ -n "$CLONE_DIR" ] && [ -n "$DEPLOYMENT_VERSION" ]; then
   echo -e "${RED}Error: --clone-dir and --deployment-version are mutually exclusive${NC}"
   echo "Use --help for usage information"
   exit 1
+fi
+
+# Additional validations for --deployment-version
+if [ -n "$DEPLOYMENT_VERSION" ]; then
+  # Check if --deployment-version is used with incompatible flags
+  if [ "$PUSH_IMAGES" = true ] || [ "$BUILD_PROJECT" = false ] || [ "$SKIP_TESTS" = true ]; then
+    echo -e "${RED}Error: --deployment-version cannot be used with --push, --skip-build, or --skip-tests${NC}"
+    echo "The --deployment-version flag only updates .env files and does not build or push images"
+    echo "Use --help for usage information"
+    exit 1
+  fi
+
+  # Validate version format (should not start with 'v')
+  if [[ "$DEPLOYMENT_VERSION" =~ ^v ]]; then
+    echo -e "${RED}Error: Version should be in plain format (e.g., 1.0.0) without 'v' prefix${NC}"
+    echo "Provided: $DEPLOYMENT_VERSION"
+    echo "Expected format: 1.0.0"
+    exit 1
+  fi
 fi
 
 # Save the original directory (deployment repo)
