@@ -14,6 +14,7 @@ PUSH_IMAGES=${PUSH_IMAGES:-false}
 DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME:-wso2}
 REGISTRY=${REGISTRY:-docker.io}
 CLONE_DIR=""
+DEPLOYMENT_VERSION=""
 BUILD_PROJECT=${BUILD_PROJECT:-true}
 SKIP_TESTS=${SKIP_TESTS:-false}
 REPO_URL="https://github.com/wso2/product-integrator-websubhub"
@@ -33,6 +34,10 @@ while [[ $# -gt 0 ]]; do
       CLONE_DIR="$2"
       shift 2
       ;;
+    --deployment-version)
+      DEPLOYMENT_VERSION="$2"
+      shift 2
+      ;;
     --skip-build)
       BUILD_PROJECT=false
       shift
@@ -42,19 +47,20 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --help)
-      echo "Usage: $0 --clone-dir <dir> [OPTIONS]"
+      echo "Usage: $0 [--clone-dir <dir> | --deployment-version <version>] [OPTIONS]"
       echo ""
-      echo "Clone, build, and create Docker images for WSO2 WebSubHub components"
+      echo "Prepare WSO2 WebSubHub deployment by either building from source or using a released version"
       echo ""
-      echo "Required:"
-      echo "  --clone-dir <dir>   Clone repository to specified directory (REQUIRED)"
+      echo "Required (mutually exclusive):"
+      echo "  --clone-dir <dir>              Clone repository to specified directory and build from source"
+      echo "  --deployment-version <version> Use a released version (updates .env files with version)"
       echo ""
       echo "Options:"
-      echo "  --skip-build        Skip Gradle build step (use existing build artifacts)"
-      echo "  --skip-tests        Skip tests during Gradle build"
-      echo "  --push              Push images to Docker Hub (default: false)"
-      echo "  --username <user>   Docker Hub username (default: wso2)"
-      echo "  --help              Show this help message"
+      echo "  --skip-build                   Skip Gradle build step (use existing build artifacts)"
+      echo "  --skip-tests                   Skip tests during Gradle build"
+      echo "  --push                         Push images to Docker Hub (default: false)"
+      echo "  --username <user>              Docker Hub username (default: wso2)"
+      echo "  --help                         Show this help message"
       echo ""
       echo "Environment Variables:"
       echo "  BUILD_PROJECT       Set to 'false' to skip Gradle build"
@@ -64,14 +70,17 @@ while [[ $# -gt 0 ]]; do
       echo "  DOCKERHUB_TOKEN     Docker Hub token/password (required if --push is used)"
       echo ""
       echo "Examples:"
-      echo "  # Clone, build, and create images"
+      echo "  # Clone, build, and create images from source"
       echo "  $0 --clone-dir /tmp/websubhub"
       echo ""
       echo "  # Clone, build (skip tests), and create images"
       echo "  $0 --clone-dir /tmp/websubhub --skip-tests"
       echo ""
-      echo "  # Clone, build (skip tests), and push images"
-      echo "  $0 --clone-dir /tmp/websubhub --skip-tests --push"
+      echo "  # Use a released version (e.g., v1.0.0)"
+      echo "  $0 --deployment-version v1.0.0"
+      echo ""
+      echo "  # Use a released version and push images"
+      echo "  $0 --deployment-version v1.0.0 --push"
       exit 0
       ;;
     *)
@@ -83,8 +92,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate required parameters
-if [ -z "$CLONE_DIR" ]; then
-  echo -e "${RED}Error: --clone-dir is required${NC}"
+if [ -z "$CLONE_DIR" ] && [ -z "$DEPLOYMENT_VERSION" ]; then
+  echo -e "${RED}Error: Either --clone-dir or --deployment-version is required${NC}"
+  echo "Use --help for usage information"
+  exit 1
+fi
+
+if [ -n "$CLONE_DIR" ] && [ -n "$DEPLOYMENT_VERSION" ]; then
+  echo -e "${RED}Error: --clone-dir and --deployment-version are mutually exclusive${NC}"
   echo "Use --help for usage information"
   exit 1
 fi
@@ -92,8 +107,34 @@ fi
 # Save the original directory (deployment repo)
 DEPLOYMENT_DIR=$(pwd)
 
-echo -e "${GREEN}=== WSO2 WebSubHub Docker Image Build Script ===${NC}"
+echo -e "${GREEN}=== WSO2 WebSubHub Deployment Preparation Script ===${NC}"
 echo ""
+
+# If deployment version is provided, skip clone and build steps
+if [ -n "$DEPLOYMENT_VERSION" ]; then
+  echo -e "${BLUE}=== Using Deployment Version: ${DEPLOYMENT_VERSION} ===${NC}"
+  VERSION="$DEPLOYMENT_VERSION"
+
+  # Update .env files in all docker broker subdirectories
+  DOCKER_DIR="${DEPLOYMENT_DIR}/docker"
+  if [ -d "$DOCKER_DIR" ]; then
+    echo -e "${YELLOW}Updating .env files in docker subdirectories...${NC}"
+    for broker_dir in "$DOCKER_DIR"/*; do
+      if [ -d "$broker_dir" ]; then
+        env_file="${broker_dir}/.env"
+        echo "WEBSUBHUB_VERSION=${VERSION}" > "$env_file"
+        echo -e "${GREEN}✓ Updated $(basename "$broker_dir")/.env with version ${VERSION}${NC}"
+      fi
+    done
+  else
+    echo -e "${RED}Error: ${DOCKER_DIR} not found${NC}"
+    exit 1
+  fi
+  echo ""
+  echo -e "${GREEN}=== Deployment preparation complete ===${NC}"
+  echo -e "${GREEN}Updated .env files with version: ${VERSION}${NC}"
+  exit 0
+fi
 
 # Step 1: Clone repository
 echo -e "${BLUE}=== Step 1: Cloning Repository ===${NC}"
