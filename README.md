@@ -14,161 +14,197 @@ WebSubHub is a publish-subscribe hub implementation based on the W3C WebSub spec
 
 ## Prerequisites
 
-### For Docker Deployment
-- **Docker** and **Docker Compose** installed
-- **Docker Buildx** for multi-architecture builds
-- **Java 21+** for building the project
-- **Ballerina SL 2201.13.1+** for building the project
+### Required for All Deployment Scenarios
+
+- **Docker** and **Docker Compose**
 - **Git** for cloning repositories
 
-### For Kubernetes Deployment (Optional)
+**System Configuration:**
+
+Add the following entries to `/etc/hosts` on your machine:
+
+```shell
+127.0.0.1 dev.websubhub.com
+127.0.0.2 dev.websubhub.com
+```
+
+### Additional Requirements Based on Deployment Mode
+
+#### If Building from Source (`--clone-dir`)
+
+- **Docker Buildx** - For building multi-architecture images
+- **Java 21+** - Verified automatically by the build script
+- **Ballerina SL 2201.13.1+** - Required for building WebSubHub components
+
+#### If Using Released Versions (`--deployment-version`)
+
+No additional requirements. The script will only update configuration files with the specified version.
+
+#### If Deploying on Kubernetes
+
 - **Kubernetes cluster** (v1.19+) or **Minikube** for local development
-- **Helm 3.x** for chart deployment
+- **Helm 3.x** for managing chart deployments
 - **kubectl** configured to access your cluster
 
-## Building Docker Images
+## Preparing for Deployment
 
-Use the `websubhub-docker-build.sh` script to clone, build, and create Docker images for WebSubHub components.
+The `prepare-deployment.sh` script supports **two deployment modes**. Choose the appropriate mode based on your needs:
 
-### Basic Usage
+### Mode 1: Build from Source
 
+Use this mode when you want to build WebSubHub components from the latest source code or a specific branch.
+
+**Basic Command:**
 ```bash
-./websubhub-docker-build.sh --clone-dir /tmp/websubhub
+./prepare-deployment.sh --clone-dir /tmp/websubhub --skip-tests
 ```
 
-This will:
-1. Clone the WebSubHub repository to the specified directory
-2. Check Java version (requires Java 21+)
-3. Build the project with Gradle
-4. Build Docker images for all components
-5. Create `.env` files in broker directories with the built version
+**What this does:**
+1. Clones the WebSubHub repository to the specified directory
+2. Validates Java 21+ is installed
+3. Builds the project with Gradle
+4. Creates Docker images for all components (Hub, Consolidator)
+5. Loads images into local Docker daemon
+6. Generates `.env` files in `docker/kafka/` and `docker/solace/` with the extracted version
 
-### Script Options
-
+**Available Options:**
 ```bash
-./websubhub-docker-build.sh --clone-dir <dir> [OPTIONS]
+./prepare-deployment.sh --clone-dir <directory> [OPTIONS]
 
 Required:
-  --clone-dir <dir>   Directory to clone the repository into (REQUIRED)
+  --clone-dir <dir>    Directory where WebSubHub source will be cloned
 
-Options:
-  --skip-build        Skip Gradle build step (use existing build artifacts)
-  --skip-tests        Skip tests during Gradle build
-  --push              Push images to Docker Hub
-  --username <user>   Docker Hub username (default: wso2)
-  --help              Show help message
+Optional:
+  --skip-tests         Skip running tests during Gradle build (faster)
+  --skip-build         Skip Gradle build (use existing artifacts)
 ```
 
-### Examples
-
-Build with tests:
+**Examples:**
 ```bash
-./websubhub-docker-build.sh --clone-dir /tmp/websubhub
+# Build with tests
+./prepare-deployment.sh --clone-dir /tmp/websubhub
+
+# Build without tests (recommended for faster builds)
+./prepare-deployment.sh --clone-dir /tmp/websubhub --skip-tests
+
+# Skip build entirely (use existing build artifacts)
+./prepare-deployment.sh --clone-dir /tmp/websubhub --skip-build --skip-tests
 ```
 
-Build without tests (faster):
+### Mode 2: Use a Released Version
+
+Use this mode when you want to deploy a specific released version of WebSubHub without building from source.
+
+**Command:**
 ```bash
-./websubhub-docker-build.sh --clone-dir /tmp/websubhub --skip-tests
+./prepare-deployment.sh --deployment-version <version>
 ```
 
-Build and push to Docker Hub:
+**What this does:**
+1. Updates `.env` files in `docker/kafka/` and `docker/solace/` with the specified version
+2. Exits immediately (no cloning, building, or image creation)
+
+**Important:** Version must be in plain format (e.g., `1.0.0`), not semver-tagged (e.g., `v1.0.0`).
+
+**Example:**
 ```bash
-export DOCKERHUB_TOKEN="your-token"
-./websubhub-docker-build.sh --clone-dir /tmp/websubhub --skip-tests --push --username yourusername
+./prepare-deployment.sh --deployment-version 1.0.0
 ```
+
+**Note:** This mode assumes the Docker images for the specified version are already available in a registry that your Docker daemon can pull from.
 
 ## Deploying WebSubHub
 
-After building the Docker images, deploy WebSubHub using Docker Compose with your preferred message broker.
+After preparing your deployment (building images or configuring a released version), you can deploy WebSubHub using Docker Compose or Kubernetes with your preferred message broker.
 
 ### Supported Message Brokers
 
-This repository provides deployment configurations for multiple message brokers:
-- **Solace PubSub+** - Enterprise-grade messaging platform
+This repository provides deployment configurations for:
 - **Apache Kafka** - High-throughput distributed streaming platform
+- **Solace PubSub+** - Enterprise-grade messaging platform
 
-### Deploying with Solace
+### Docker Deployment
 
-Navigate to the Solace broker directory:
+WebSubHub can be deployed locally using Docker Compose with either Kafka or Solace as the message broker backend.
+
+#### Quick Start
+
+1. **Navigate to your broker directory:**
+   ```bash
+   cd docker/kafka    # For Kafka deployment
+   # OR
+   cd docker/solace   # For Solace deployment
+   ```
+
+2. **Start all services:**
+   ```bash
+   docker compose up -d
+   ```
+
+   This starts three services in the following order:
+   - Message broker (Kafka or Solace)
+   - WebSubHub Consolidator (depends on broker)
+   - WebSubHub Hub (depends on Consolidator)
+
+3. **Verify services are running:**
+   ```bash
+   docker compose ps
+   ```
+
+#### Accessing Services
+
+**For Kafka Deployment:**
+- WebSubHub Hub: `https://dev.websubhub.com/hub`
+- Kafka Bootstrap Server: `localhost:9092` (for external clients)
+
+**For Solace Deployment:**
+- WebSubHub Hub: `https://dev.websubhub.com/hub`
+- Solace Admin UI: `http://localhost:8085` (username: `admin`, password: `admin`)
+- Solace SMF Port: `55555`
+
+#### Managing Your Deployment
+
+**View all logs:**
 ```bash
-cd docker/solace
+docker compose logs -f
 ```
 
-Start the services:
+**View logs for a specific service:**
 ```bash
-docker-compose up -d
+docker compose logs -f hub           # Hub service logs
+docker compose logs -f consolidator  # Consolidator service logs
+docker compose logs -f kafka         # Kafka broker logs
+docker compose logs -f solace        # Solace broker logs
 ```
 
-This will start:
-- **Solace PubSub+** message broker
-- **WebSubHub Consolidator** (event processor)
-- **WebSubHub Hub** (main service)
-
-**Accessing Solace Services:**
-- **WebSubHub Hub**: `https://localhost:9000`
-- **Consolidator**: `http://localhost:10001`
-- **Solace Admin**: `http://localhost:8085` (username: `admin`, password: `admin`)
-- **Solace Messaging**: `localhost:55554`
-
-### Deploying with Kafka
-
-Navigate to the Kafka broker directory:
+**Check service health:**
 ```bash
-cd docker/kafka
+docker compose ps
 ```
 
-Start the services:
+**Stop all services:**
 ```bash
-docker-compose up -d
+docker compose down
 ```
 
-This will start:
-- **Apache Kafka** (KRaft mode, no Zookeeper required)
-- **WebSubHub Consolidator** (event processor)
-- **WebSubHub Hub** (main service)
-
-**Accessing Kafka Services:**
-- **WebSubHub Hub**: `https://localhost:9000`
-- **Consolidator**: `http://localhost:10001`
-- **Kafka Broker**: `localhost:9092`
-
-### Common Operations
-
-Check the status:
+**Clean deployment (remove volumes):**
 ```bash
-docker-compose ps
+docker compose down -v
 ```
 
-View logs:
-```bash
-docker-compose logs -f
-```
+#### Configuration Files
 
-View logs for a specific service:
-```bash
-docker-compose logs -f hub
-docker-compose logs -f consolidator
-```
+Each broker deployment directory contains configuration files:
 
-Stop the services:
-```bash
-docker-compose down
-```
+- `Config.hub.toml` - Hub service configuration (ports, SSL, topics)
+- `Config.consolidator.toml` - Consolidator configuration (broker connection settings)
+- `.env` - Version configuration (auto-generated by `prepare-deployment.sh`)
+- `docker-compose.yml` - Service orchestration and networking
 
-Remove volumes (clean state):
-```bash
-docker-compose down -v
-```
+**Version Synchronization:**
+The `.env` file contains `WEBSUBHUB_VERSION` which must match the version in your Docker images. This is automatically managed by the preparation script.
 
-### Configuration
-
-Configuration files for each component are located in the broker directory:
-- `Config.hub.toml` - Hub service configuration
-- `Config.consolidator.toml` - Consolidator service configuration
-
-The WebSubHub version is automatically set in `.env` files by the build script.
-
-## Deploying on Kubernetes
+### Deploying on Kubernetes
 
 WebSubHub can also be deployed on Kubernetes using Helm charts. This provides better scalability, high availability, and production-grade orchestration.
 
@@ -220,7 +256,7 @@ When using Minikube, build images directly in Minikube's Docker daemon:
 eval $(minikube docker-env)
 
 # Build images
-./websubhub-docker-build.sh --clone-dir /tmp/websubhub --skip-tests
+./prepare-deployment.sh --clone-dir /tmp/websubhub --skip-tests
 
 # Deploy (note: using IfNotPresent for local images)
 kubectl create namespace websubhub
@@ -245,7 +281,7 @@ For complete documentation including Minikube setup, scaling, monitoring, and ad
 Register a topic with the hub:
 
 ```bash
-curl -X POST https://localhost:9000/hub \
+curl -X POST https://dev.websubhub.com/hub \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "hub.mode=register" \
   -d "hub.topic=news" \
@@ -259,7 +295,7 @@ First, create a webhook at [webhook.site](https://webhook.site) and copy your un
 Then, subscribe to the topic (replace `<callback-url>` with your URL-encoded webhook URL):
 
 ```bash
-curl -X POST "https://localhost:9000/hub" \
+curl -X POST "https://dev.websubhub.com/hub" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "hub.topic=news" \
   -d "hub.callback=<callback-url>" \
@@ -274,7 +310,7 @@ curl -X POST "https://localhost:9000/hub" \
 Publish content to the topic:
 
 ```bash
-curl -X POST "https://localhost:9000/hub?hub.mode=publish&hub.topic=news" \
+curl -X POST "https://dev.websubhub.com/hub?hub.mode=publish&hub.topic=news" \
   -H "Content-Type: application/json" \
   -d '{"message": "This is a test message"}' \
   -k
@@ -310,7 +346,7 @@ websubhub-deployment/
 │       ├── manifests/
 │       │   └── solace-deployment.yaml   # Solace broker manifests
 │       └── README.md            # Kubernetes deployment guide
-├── websubhub-docker-build.sh    # Build script
+├── prepare-deployment.sh        # Build and preparation script
 ├── .gitignore
 └── README.md
 ```
@@ -318,7 +354,7 @@ websubhub-deployment/
 ## Continuous Integration
 
 This repository includes a GitHub Actions workflow that automatically validates:
-- Build script syntax (`websubhub-docker-build.sh`)
+- Build script syntax (`prepare-deployment.sh`)
 - Docker Compose configuration files
 - Required files and directory structure
 
@@ -338,7 +374,7 @@ ports:
 
 If services fail to start, check the logs:
 ```bash
-docker-compose logs <service-name>
+docker compose logs <service-name>
 ```
 
 Common issues:
@@ -352,7 +388,7 @@ Common issues:
 If WebSubHub can't connect to Kafka:
 1. Verify Kafka is healthy:
    ```bash
-   docker-compose logs kafka
+   docker compose logs kafka
    ```
 
 2. Check if Kafka advertised listeners are configured correctly in `docker-compose.yml`:
@@ -376,12 +412,12 @@ If WebSubHub can't connect to Kafka:
 To rebuild after code changes:
 ```bash
 # Rebuild with the build script
-./websubhub-docker-build.sh --clone-dir /tmp/websubhub
+./prepare-deployment.sh --clone-dir /tmp/websubhub
 
 # Restart services (use your broker directory)
 cd docker/kafka  # or docker/solace
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ## Additional Resources
