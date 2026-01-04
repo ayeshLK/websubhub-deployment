@@ -34,7 +34,7 @@ services:
       start_period: 30s
       retries: 10
     volumes:
-      - ./Config.hub.toml:/home/wso2/wso2websubhub-${WEBSUBHUB_VERSION:-1.0.0-M1-RC4}/conf/Config.toml
+      - ./Config.hub.toml:/home/wso2/wso2websubhub-${WEBSUBHUB_VERSION:-1.0.0}/conf/Config.toml
     networks:
       - websub-network
 
@@ -52,7 +52,7 @@ services:
       start_period: 30s
       retries: 10
     volumes:
-      - ./Config.consolidator.toml:/home/wso2/wso2websubhub-consolidator-${WEBSUBHUB_VERSION:-1.0.0-M1-RC4}/conf/Config.toml
+      - ./Config.consolidator.toml:/home/wso2/wso2websubhub-consolidator-${WEBSUBHUB_VERSION:-1.0.0}/conf/Config.toml
     networks:
       - websub-network
 
