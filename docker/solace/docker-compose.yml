@@ -61,7 +61,8 @@ services:
     container_name: solace
     hostname: solace
     ports:
-      - '8085:8080'
+      - '8085:8080' # SEMP / PubSub+ Manager
+      - '19000:9000' # REST Default VPN
     environment:
       - username_admin_globalaccesslevel=admin
       - username_admin_password=admin
