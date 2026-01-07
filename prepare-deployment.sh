@@ -11,6 +11,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 CLONE_DIR=""
+REPO_DIR=""
 DEPLOYMENT_VERSION=""
 BUILD_PROJECT=${BUILD_PROJECT:-true}
 SKIP_TESTS=${SKIP_TESTS:-false}
@@ -21,6 +22,10 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     --clone-dir)
       CLONE_DIR="$2"
+      shift 2
+      ;;
+    --repo-dir)
+      REPO_DIR="$2"
       shift 2
       ;;
     --deployment-version)
@@ -36,17 +41,18 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --help)
-      echo "Usage: $0 [--clone-dir <dir> | --deployment-version <version>] [OPTIONS]"
+      echo "Usage: $0 [--clone-dir <dir> | --repo-dir <dir> | --deployment-version <version>] [OPTIONS]"
       echo ""
       echo "Prepare WSO2 WebSubHub deployment by either building from source or using a released version"
       echo ""
       echo "Required (mutually exclusive):"
       echo "  --clone-dir <dir>              Clone repository to specified directory and build from source"
+      echo "  --repo-dir <dir>               Use an existing cloned repository and build from source"
       echo "  --deployment-version <version> Use a released version (updates .env files with version)"
       echo "                                 Note: Cannot be used with --skip-build or --skip-tests"
       echo "                                 Version format: plain format (e.g., 1.0.0) without 'v' prefix"
       echo ""
-      echo "Options (only applicable with --clone-dir):"
+      echo "Options (only applicable with --clone-dir or --repo-dir):"
       echo "  --skip-build                   Skip Gradle build step (use existing build artifacts)"
       echo "  --skip-tests                   Skip tests during Gradle build"
       echo "  --help                         Show this help message"
@@ -62,6 +68,9 @@ while [[ $# -gt 0 ]]; do
       echo "  # Clone, build (skip tests), and create images"
       echo "  $0 --clone-dir /tmp/websubhub --skip-tests"
       echo ""
+      echo "  # Use an existing cloned repository"
+      echo "  $0 --repo-dir /path/to/existing/websubhub"
+      echo ""
       echo "  # Use a released version (e.g., 1.0.0)"
       echo "  $0 --deployment-version 1.0.0"
       exit 0
@@ -75,14 +84,20 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate required parameters
-if [ -z "$CLONE_DIR" ] && [ -z "$DEPLOYMENT_VERSION" ]; then
-  echo -e "${RED}Error: Either --clone-dir or --deployment-version is required${NC}"
+if [ -z "$CLONE_DIR" ] && [ -z "$REPO_DIR" ] && [ -z "$DEPLOYMENT_VERSION" ]; then
+  echo -e "${RED}Error: Either --clone-dir, --repo-dir, or --deployment-version is required${NC}"
   echo "Use --help for usage information"
   exit 1
 fi
 
-if [ -n "$CLONE_DIR" ] && [ -n "$DEPLOYMENT_VERSION" ]; then
-  echo -e "${RED}Error: --clone-dir and --deployment-version are mutually exclusive${NC}"
+# Check for mutually exclusive options
+OPTION_COUNT=0
+[ -n "$CLONE_DIR" ] && OPTION_COUNT=$((OPTION_COUNT + 1))
+[ -n "$REPO_DIR" ] && OPTION_COUNT=$((OPTION_COUNT + 1))
+[ -n "$DEPLOYMENT_VERSION" ] && OPTION_COUNT=$((OPTION_COUNT + 1))
+
+if [ $OPTION_COUNT -gt 1 ]; then
+  echo -e "${RED}Error: --clone-dir, --repo-dir, and --deployment-version are mutually exclusive${NC}"
   echo "Use --help for usage information"
   exit 1
 fi
@@ -104,6 +119,32 @@ if [ -n "$DEPLOYMENT_VERSION" ]; then
     echo "Expected format: 1.0.0"
     exit 1
   fi
+fi
+
+# Additional validations for --repo-dir
+if [ -n "$REPO_DIR" ]; then
+  # Check if directory exists
+  if [ ! -d "$REPO_DIR" ]; then
+    echo -e "${RED}Error: Repository directory does not exist: ${REPO_DIR}${NC}"
+    exit 1
+  fi
+
+  # Check if it's a valid WebSubHub repository
+  if [ ! -f "$REPO_DIR/gradle.properties" ]; then
+    echo -e "${RED}Error: Invalid WebSubHub repository - gradle.properties not found${NC}"
+    echo "Directory: $REPO_DIR"
+    exit 1
+  fi
+
+  if [ ! -d "$REPO_DIR/components" ]; then
+    echo -e "${RED}Error: Invalid WebSubHub repository - components directory not found${NC}"
+    echo "Directory: $REPO_DIR"
+    exit 1
+  fi
+
+  # Convert to absolute path
+  REPO_DIR=$(cd "$REPO_DIR" && pwd)
+  echo -e "${GREEN}✓ Valid WebSubHub repository found at: ${REPO_DIR}${NC}"
 fi
 
 # Save the original directory (deployment repo)
@@ -138,34 +179,44 @@ if [ -n "$DEPLOYMENT_VERSION" ]; then
   exit 0
 fi
 
-# Step 1: Clone repository
-echo -e "${BLUE}=== Step 1: Cloning Repository ===${NC}"
+# Step 1: Prepare repository
+if [ -n "$CLONE_DIR" ]; then
+  echo -e "${BLUE}=== Step 1: Cloning Repository ===${NC}"
 
-if [ -d "$CLONE_DIR" ]; then
-  echo -e "${YELLOW}Directory $CLONE_DIR already exists${NC}"
-  read -p "Do you want to remove it and re-clone? (y/N): " -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Removing existing directory..."
-    rm -rf "$CLONE_DIR"
-  else
-    echo "Using existing directory"
+  if [ -d "$CLONE_DIR" ]; then
+    echo -e "${YELLOW}Directory $CLONE_DIR already exists${NC}"
+    read -p "Do you want to remove it and re-clone? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "Removing existing directory..."
+      rm -rf "$CLONE_DIR"
+    else
+      echo "Using existing directory"
+    fi
   fi
-fi
 
-if [ ! -d "$CLONE_DIR" ]; then
-  echo -e "${YELLOW}Cloning repository from ${REPO_URL}${NC}"
-  git clone "$REPO_URL" "$CLONE_DIR"
-  if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Failed to clone repository${NC}"
-    exit 1
+  if [ ! -d "$CLONE_DIR" ]; then
+    echo -e "${YELLOW}Cloning repository from ${REPO_URL}${NC}"
+    git clone "$REPO_URL" "$CLONE_DIR"
+    if [ $? -ne 0 ]; then
+      echo -e "${RED}Error: Failed to clone repository${NC}"
+      exit 1
+    fi
+    echo -e "${GREEN}✓ Repository cloned successfully${NC}"
   fi
-  echo -e "${GREEN}✓ Repository cloned successfully${NC}"
-fi
 
-echo "Changing to repository directory: $CLONE_DIR"
-cd "$CLONE_DIR"
-echo ""
+  echo "Changing to repository directory: $CLONE_DIR"
+  cd "$CLONE_DIR"
+  echo ""
+elif [ -n "$REPO_DIR" ]; then
+  echo -e "${BLUE}=== Step 1: Using Existing Repository ===${NC}"
+  echo -e "${YELLOW}Using repository at: ${REPO_DIR}${NC}"
+
+  echo "Changing to repository directory: $REPO_DIR"
+  cd "$REPO_DIR"
+  echo -e "${GREEN}✓ Ready to build from existing repository${NC}"
+  echo ""
+fi
 
 # Step 2: Check Java version
 echo -e "${BLUE}=== Step 2: Checking Java Version ===${NC}"

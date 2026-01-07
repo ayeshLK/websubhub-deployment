@@ -30,7 +30,7 @@ Add the following entries to `/etc/hosts` on your machine:
 
 ### Additional Requirements Based on Deployment Mode
 
-#### If Building from Source (`--clone-dir`)
+#### If Building from Source (`--clone-dir` or `--repo-dir`)
 
 - **Docker Buildx** - For building multi-architecture images
 - **Java 21+** - Verified automatically by the build script
@@ -48,7 +48,7 @@ No additional requirements. The script will only update configuration files with
 
 ## Preparing for Deployment
 
-The `prepare-deployment.sh` script supports **two deployment modes**. Choose the appropriate mode based on your needs:
+The `prepare-deployment.sh` script supports **three deployment modes**. Choose the appropriate mode based on your needs:
 
 ### Mode 1: Build from Source
 
@@ -91,7 +91,56 @@ Optional:
 ./prepare-deployment.sh --clone-dir /tmp/websubhub --skip-build --skip-tests
 ```
 
-### Mode 2: Use a Released Version
+### Mode 2: Use an Existing Repository
+
+Use this mode when you already have the WebSubHub repository cloned and want to build from it without re-cloning.
+
+**Basic Command:**
+```bash
+./prepare-deployment.sh --repo-dir /path/to/existing/websubhub
+```
+
+**What this does:**
+1. Validates the directory contains a valid WebSubHub repository
+2. Validates Java 21+ is installed
+3. Builds the project with Gradle (can be skipped with `--skip-build`)
+4. Creates Docker images for all components (Hub, Consolidator)
+5. Loads images into local Docker daemon
+6. Generates `.env` files in `docker/kafka/` and `docker/solace/` with the extracted version
+
+**Available Options:**
+```bash
+./prepare-deployment.sh --repo-dir <directory> [OPTIONS]
+
+Required:
+  --repo-dir <dir>     Path to existing WebSubHub repository
+
+Optional:
+  --skip-tests         Skip running tests during Gradle build (faster)
+  --skip-build         Skip Gradle build (use existing artifacts)
+```
+
+**Examples:**
+```bash
+# Build from existing repository
+./prepare-deployment.sh --repo-dir /path/to/websubhub
+
+# Build without tests (recommended for faster builds)
+./prepare-deployment.sh --repo-dir /path/to/websubhub --skip-tests
+
+# Skip build entirely (use existing build artifacts)
+./prepare-deployment.sh --repo-dir /path/to/websubhub --skip-build --skip-tests
+```
+
+**Use Cases:**
+- You already have the repository cloned from a previous run
+- Working with a specific branch or commit
+- Iterating on builds without re-cloning
+- Testing local changes before committing
+
+**Important:** The repository must be a valid WebSubHub checkout with `gradle.properties` and `components` directory. The script does not perform any git operations (pull, checkout, etc.) and uses the repository as-is.
+
+### Mode 3: Use a Released Version
 
 Use this mode when you want to deploy a specific released version of WebSubHub without building from source.
 
@@ -255,8 +304,10 @@ When using Minikube, build images directly in Minikube's Docker daemon:
 # Point Docker to Minikube's daemon
 eval $(minikube docker-env)
 
-# Build images
+# Build images (choose one method)
 ./prepare-deployment.sh --clone-dir /tmp/websubhub --skip-tests
+# OR use existing repository
+./prepare-deployment.sh --repo-dir /path/to/existing/websubhub --skip-tests
 
 # Deploy (note: using IfNotPresent for local images)
 kubectl create namespace websubhub
@@ -411,8 +462,10 @@ If WebSubHub can't connect to Kafka:
 
 To rebuild after code changes:
 ```bash
-# Rebuild with the build script
+# Rebuild with the build script (choose one method)
 ./prepare-deployment.sh --clone-dir /tmp/websubhub
+# OR use existing repository
+./prepare-deployment.sh --repo-dir /path/to/existing/websubhub
 
 # Restart services (use your broker directory)
 cd docker/kafka  # or docker/solace
