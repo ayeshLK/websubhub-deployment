@@ -1,0 +1,23 @@
+[websubhub.consolidator.config.server]
+port = 10001
+
+[websubhub.consolidator.config.state.snapshot]
+topic = "websub-events-snapshot"
+consumerId = "websub-events-snapshot-consumer"
+
+[websubhub.consolidator.config.state.events]
+topic = "websub-events"
+consumerId = "consolidator-websub-events-consumer"
+
+[websubhub.consolidator.config.store.jms]
+initialContextFactory = "com.sun.jndi.fscontext.RefFSContextFactory"
+providerUrl = "file:/home/wso2/jndi-bindings"
+connectionFactoryName = "TestConnFac3"
+username = "admin"
+password = "password"
+
+[websubhub.consolidator.config.store.jms.consumer]
+receiveTimeout = 10.0
+
+[ballerina.log]
+level = "DEBUG"

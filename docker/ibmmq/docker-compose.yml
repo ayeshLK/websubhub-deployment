@@ -1,0 +1,82 @@
+services:
+  ingress:
+    image: nginx:alpine
+    container_name: nginx-ingress
+    ports:
+      - '127.0.0.2:443:443'
+    volumes:
+      - ../_common/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../_common/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      hub:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: ["CMD", "curl", "-k", "--fail", "https://localhost/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3        
+    networks:
+      - websub-network
+
+  hub:
+    image: 'wso2/wso2websubhub:${WEBSUBHUB_VERSION:-latest}'
+    container_name: websubhub
+    hostname: hub
+    depends_on:
+      consolidator:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/9000' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 10
+    volumes:
+      - ./Config.hub.toml:/home/wso2/wso2websubhub-${WEBSUBHUB_VERSION:-1.0.0}/conf/Config.toml
+      - ./jndi-bindings:/home/wso2/jndi-bindings
+      - ./extensions:/home/wso2/wso2websubhub-${WEBSUBHUB_VERSION:-1.0.0}/wso2/extensions
+    networks:
+      - websub-network
+
+  consolidator:
+    image: 'wso2/wso2websubhub-consolidator:${WEBSUBHUB_VERSION:-latest}'
+    container_name: websubhub-consolidator
+    hostname: consolidator
+    depends_on:
+      ibmmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/10001' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 10
+    volumes:
+      - ./Config.consolidator.toml:/home/wso2/wso2websubhub-consolidator-${WEBSUBHUB_VERSION:-1.0.0}/conf/Config.toml
+      - ./jndi-bindings:/home/wso2/jndi-bindings
+      - ./extensions:/home/wso2/wso2websubhub-consolidator-${WEBSUBHUB_VERSION:-1.0.0}/wso2/extensions      
+    networks:
+      - websub-network
+
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:9.4.0.10-r2
+    container_name: ibmmq
+    hostname: ibmmq
+    ports:
+      - "1414:1414"
+    environment:
+      - LICENSE=accept
+      - MQ_QMGR_NAME=BALLERINA_QM1
+      - MQ_ADMIN_PASSWORD=password
+    healthcheck:
+      test: ["CMD-SHELL", "chkmqstarted"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - websub-network
+
+networks:
+  websub-network:
